@@ -100,6 +100,27 @@ body.theme-light::before{content:'';position:fixed;inset:0;background:radial-gra
 .toast{position:fixed;bottom:90px;left:50%;z-index:200;transform:translateX(-50%) translateY(20px);padding:8px 20px;border-radius:20px;background:var(--toast-bg);border:1px solid var(--toast-border);color:var(--text-1);font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:all .3s;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .file-input{display:none}
+/* ── 连通性测试 ── */
+.act.test{padding:0 6px;width:34px}
+.act.test:hover{color:var(--accent);background:var(--accent-dim)}
+.status-line{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 10px;background:var(--surface-2);border-radius:8px;font-size:12px;line-height:1.4}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background .2s}
+.status-dot.ok{background:#4caf50}
+.status-dot.err{background:var(--danger)}
+.status-dot.warn{background:#e8a33d}
+.status-dot.idle{background:var(--text-4)}
+.status-dot.loading{background:var(--accent);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+.status-msg{flex:1;color:var(--text-2);word-break:break-word;min-width:0}
+.status-time{flex-shrink:0;font-size:11px;color:var(--text-4)}
+.cbtn.spin svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.testall-btn{display:flex;align-items:center;gap:5px;height:38px;padding:0 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--accent);cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;flex-shrink:0}
+.testall-btn:hover{border-color:var(--accent);background:var(--accent-dim)}
+.testall-btn:active{transform:scale(.95)}
+.testall-btn:disabled{opacity:.5;cursor:default}
+.testall-btn.spin svg{animation:spin 1s linear infinite}
+
 </style>
 </head>
 <body class="theme-dark">
@@ -122,6 +143,10 @@ body.theme-light::before{content:'';position:fixed;inset:0;background:radial-gra
     </button>
     <button class="icon-btn" onclick="doExport()" title="导出">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    </button>
+    <button class="testall-btn" id="testAllBtn" onclick="testAll()" title="一键测试全部中转站连通性">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 16.24a6 6 0 0 1 0-8.49M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>
+      测全部
     </button>
     <input type="file" class="file-input" id="fileIn" accept=".json" onchange="handleImport(event)">
   </div>
@@ -288,6 +313,9 @@ document.body.addEventListener('click',function(ev){
 
   // ── 删除 ──
   if(act==='delete'){pendingDel=id;document.getElementById('cOverlay').classList.add('on');return}
+
+  // ── 连通性测试（单条）──
+  if(act==='test'){runTest(id);return}
 },true);/* ← 捕获阶段 */
 
 /* ── 数据 ── */
@@ -361,6 +389,12 @@ function render(){
     h+='<button class="cbtn" data-act="showkey" data-id="'+e.id+'" title="显示/隐藏">'+ICON_EYE+'</button>';
     h+='<button class="cbtn" data-act="copy" data-field="apiKey" data-id="'+e.id+'" title="复制Key">'+ICON_COPY+'</button></div>';
     if(e.remark)h+='<div class="remark-box"><div class="remark-label">备注</div><div class="remark-text">'+esc(e.remark)+'</div></div>';
+    // 连通性状态行
+    var lc=e.lastCheck, dotc=lc?dotCls(lc.status):'idle';
+    h+='<div class="status-line"><span class="status-dot '+(lc?dotCls(lc.status):'idle')+'" id="dot-'+e.id+'"></span>';
+    h+='<span class="status-msg" id="st-'+e.id+'">'+(lc?esc(lc.msg):'未测试 · 点右侧雷达检测')+'</span>';
+    if(lc&&lc.ts)h+='<span class="status-time" id="stt-'+e.id+'">'+timeAgo(lc.ts)+'</span>';
+    h+='<button class="cbtn'+(lc&&lc.status==='testing'?' spin':'')+'" data-act="test" data-id="'+e.id+'" title="测试连通性"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 16.24a6 6 0 0 1 0-8.49M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg></button></div>';
     h+='</div>';
   });
   el.innerHTML=h;
@@ -433,6 +467,109 @@ function handleImport(ev){
       sv(d);renderCats();render();toast('已导入 '+c+' 条');
     }catch(er){toast('文件格式错误')}
   };rd.readAsText(f);ev.target.value='';
+}
+
+/* ── 连通性测试 ── */
+var TEST_TIMEOUT=8000;
+function dotCls(s){return s==='ok'?'ok':s==='err'?'err':s==='warn'?'warn':s==='testing'?'loading':'idle'}
+function timeAgo(ts){
+  var d=Date.now()-ts,s=Math.floor(d/1000);
+  if(s<60)return '刚刚';
+  if(s<3600)return Math.floor(s/60)+'分钟前';
+  if(s<86400)return Math.floor(s/3600)+'小时前';
+  return Math.floor(s/86400)+'天前';
+}
+function normLink(l){
+  var b=(l||'').trim().replace(/\/+$/,'');
+  if(/\/chat\/completions$/.test(b))b=b.replace(/\/chat\/completions$/,'');
+  if(/\/models$/.test(b))b=b.replace(/\/models$/,'');
+  return b;
+}
+function modelFirst(m){return (m||'').split(',')[0].trim()||'gpt-3.5-turbo'}
+function setStatusUI(id,status,msg,ts){
+  var dot=document.getElementById('dot-'+id),st=document.getElementById('st-'+id);
+  if(dot)dot.className='status-dot '+dotCls(status);
+  if(st)st.textContent=msg;
+  if(ts){var t=document.getElementById('stt-'+id);if(t)t.textContent=timeAgo(ts)}
+  var btn=document.querySelector('.cbtn[data-act="test"][data-id="'+id+'"]');
+  if(btn){if(status==='testing')btn.classList.add('spin');else btn.classList.remove('spin')}
+}
+
+// 探测单条：优先 GET /models，兜底 POST /chat/completions
+async function probe(item){
+  var base=normLink(item.link),key=item.apiKey||'',hasKey=!!key;
+  var auth={};if(hasKey)auth['Authorization']='Bearer '+key;
+  var modelUrls=[base+'/models'];
+  if(!/\/v1$/.test(base))modelUrls.push(base+'/v1/models');
+  // 1) GET /models
+  for(var i=0;i<modelUrls.length;i++){
+    try{
+      var t0=Date.now();
+      var r=await fetch(modelUrls[i],{method:'GET',headers:Object.assign({'Accept':'application/json'},auth),signal:AbortSignal.timeout(TEST_TIMEOUT)});
+      var ms=Date.now()-t0;
+      if(r.ok)return{status:'ok',msg:'正常 · '+ms+'ms',ms:ms};
+      if(r.status===401)return{status:hasKey?'err':'warn',msg:hasKey?'401 密钥无效':'链接可达 · 未填 Key',ms:ms};
+      if(r.status===403)return{status:'err',msg:'403 无权限 · '+ms+'ms',ms:ms};
+      if(r.status===404){if(i<modelUrls.length-1)continue;/* 全部404，落入 chat 兜底 */}
+      else return{status:'warn',msg:r.status+' 异常 · '+ms+'ms',ms:ms};
+    }catch(e){
+      if(e.name==='TimeoutError')return{status:'err',msg:'超时（'+(TEST_TIMEOUT/1000)+'s）无响应',ms:TEST_TIMEOUT};
+      if(i<modelUrls.length-1)continue;
+    }
+  }
+  // 2) POST /chat/completions 兜底
+  var chatUrls=[base+'/chat/completions'];
+  if(!/\/v1$/.test(base))chatUrls.push(base+'/v1/chat/completions');
+  var mdl=modelFirst(item.models);
+  for(var j=0;j<chatUrls.length;j++){
+    try{
+      var t1=Date.now();
+      var r2=await fetch(chatUrls[j],{method:'POST',headers:Object.assign({'Content-Type':'application/json'},auth),body:JSON.stringify({model:mdl,messages:[{role:'user',content:'hi'}],max_tokens:1,stream:false}),signal:AbortSignal.timeout(TEST_TIMEOUT)});
+      var ms2=Date.now()-t1;
+      if(r2.ok)return{status:'ok',msg:'正常（chat） · '+ms2+'ms',ms:ms2};
+      if(r2.status===401)return{status:hasKey?'err':'warn',msg:hasKey?'401 密钥无效':'链接可达 · 未填 Key',ms:ms2};
+      if(r2.status===403)return{status:'err',msg:'403 无权限 · '+ms2+'ms',ms:ms2};
+      if(r2.status===404){if(j<chatUrls.length-1)continue;return{status:'warn',msg:'404 路径不存在',ms:ms2}}
+      return{status:'warn',msg:r2.status+' 异常 · '+ms2+'ms',ms:ms2};
+    }catch(e){
+      if(e.name==='TimeoutError')return{status:'err',msg:'超时（'+(TEST_TIMEOUT/1000)+'s）无响应',ms:TEST_TIMEOUT};
+      if(j<chatUrls.length-1)continue;
+      return{status:'err',msg:'网络不可达 / CORS 拦截',ms:TEST_TIMEOUT};
+    }
+  }
+}
+
+async function runTest(id){
+  var d=ld(),item=d.find(function(e){return e.id===id});
+  if(!item)return;
+  setStatusUI(id,'testing','测试中...');
+  var res=await probe(item);
+  var ts=Date.now();
+  var dd=ld(),it=dd.find(function(e){return e.id===id});
+  if(it){it.lastCheck={status:res.status,msg:res.msg,ts:ts};sv(dd)}
+  setStatusUI(id,res.status,res.msg,ts);
+  if(res.status!=='ok')toast((item.name||'该项')+'：'+res.msg);
+}
+
+var _testing=false;
+async function testAll(){
+  if(_testing)return;
+  var all=ld();if(!all.length){toast('没有中转站');return}
+  _testing=true;
+  var btn=document.getElementById('testAllBtn');
+  if(btn){btn.disabled=true;btn.classList.add('spin')}
+  toast('开始测试 '+all.length+' 个中转站');
+  var idx=0,CONC=3;
+  async function worker(){
+    while(idx<all.length){
+      var i=idx++;await runTest(all[i].id);
+    }
+  }
+  var ws=[];for(var k=0;k<CONC;k++)ws.push(worker());
+  await Promise.all(ws);
+  if(btn){btn.disabled=false;btn.classList.remove('spin')}
+  _testing=false;
+  toast('全部测试完成');
 }
 
 /* ── 启动 ── */
