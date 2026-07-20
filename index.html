@@ -120,6 +120,26 @@ body.theme-light::before{content:'';position:fixed;inset:0;background:radial-gra
 .testall-btn:active{transform:scale(.95)}
 .testall-btn:disabled{opacity:.5;cursor:default}
 .testall-btn.spin svg{animation:spin 1s linear infinite}
+/* ── 云端同步 ── */
+.sync-btn{display:flex;align-items:center;gap:5px;height:38px;padding:0 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:#5b9dd9;cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;flex-shrink:0}
+.sync-btn:hover{border-color:#5b9dd9;background:rgba(91,157,217,.12)}
+.sync-btn:active{transform:scale(.95)}
+.sync-btn:disabled{opacity:.5;cursor:default}
+.sync-btn.spin svg{animation:spin 1s linear infinite}
+.sync-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px}
+.sync-badge.off{background:rgba(232,163,61,.12);color:#e8a33d}
+.sync-badge.on{background:rgba(76,175,80,.12);color:#4caf50}
+.sync-badge.err{background:rgba(224,85,85,.12);color:var(--danger)}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.set-label{font-size:13px;color:var(--text-2)}
+.set-hint{font-size:11px;color:var(--text-4);margin-top:6px;line-height:1.5}
+.set-hint code{background:var(--surface-2);padding:1px 5px;border-radius:4px;font-size:10px;color:var(--text-2)}
+.switch{position:relative;width:42px;height:24px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.switch .slider{position:absolute;inset:0;background:var(--surface-3);border-radius:20px;cursor:pointer;transition:.2s}
+.switch .slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked+.slider{background:var(--accent)}
+.switch input:checked+.slider:before{transform:translateX(18px)}
 
 </style>
 </head>
@@ -148,6 +168,13 @@ body.theme-light::before{content:'';position:fixed;inset:0;background:radial-gra
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 16.24a6 6 0 0 1 0-8.49M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>
       测全部
     </button>
+    <button class="sync-btn" id="syncBtn" onclick="syncCloud()" title="一键同步：把中转站同步到云端，多设备共享">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      同步
+    </button>
+    <button class="icon-btn" onclick="openSyncSettings()" title="云端同步设置">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
     <input type="file" class="file-input" id="fileIn" accept=".json" onchange="handleImport(event)">
   </div>
 </div>
@@ -175,6 +202,35 @@ body.theme-light::before{content:'';position:fixed;inset:0;background:radial-gra
     <p>确认删除该条目？</p>
     <div class="btns"><button class="btn bg" onclick="closeConfirm()">取消</button><button class="btn" style="background:var(--danger);color:#fff" onclick="doDelete()">删除</button></div>
   </div>
+</div>
+
+<!-- 弹窗：云端同步设置 -->
+<div class="modal-overlay" id="syncOverlay" onclick="closeSyncSettings()"></div>
+<div class="modal" id="syncModal">
+  <h2>☁ 云端同步（多设备共享）</h2>
+  <div class="set-row">
+    <span id="syncBadge" class="sync-badge off">🟡 未配置</span>
+    <span class="set-hint" style="margin:0" id="syncLastTime"></span>
+  </div>
+  <div class="fg">
+    <label class="fl">GitHub Token（需 repo 写权限）</label>
+    <input class="fi" type="password" id="ghToken" placeholder="ghp_..." autocomplete="off">
+    <div class="set-hint">Token 仅存本机 localStorage，用于读写云端 <code>relay.json</code>。建议用仅能访问该仓库的 PAT，不要在公共设备保存。</div>
+  </div>
+  <div class="fg">
+    <label class="fl">仓库（owner/repo）</label>
+    <input class="fi" type="text" id="ghRepo" placeholder="jiesenmax-lang/api-relay-manager">
+    <div class="set-hint">云端文件固定为仓库根目录的 <code>relay.json</code>。</div>
+  </div>
+  <div class="set-row">
+    <span class="set-label">打开页面自动拉取云端</span>
+    <label class="switch"><input type="checkbox" id="ghAuto"><span class="slider"></span></label>
+  </div>
+  <div class="ma">
+    <button class="btn bg" onclick="closeSyncSettings()">关闭</button>
+    <button class="btn bp" onclick="syncCloud()">立即同步</button>
+  </div>
+  <div class="set-hint">同步逻辑：本地与云端按 <code>id</code> 合并，同一项保留更新时间较新的一方，所有设备最终一致。无需手动选方向。</div>
 </div>
 
 <!-- 弹窗：手动复制 -->
@@ -572,7 +628,110 @@ async function testAll(){
   toast('全部测试完成');
 }
 
+/* ── 云端同步（多设备）── */
+var GK='relay_gh_token',GR='relay_gh_repo',GA='relay_gh_auto',GL='relay_gh_last';
+var GH_DEF_REPO='jiesenmax-lang/api-relay-manager';
+function getGhToken(){return localStorage.getItem(GK)||''}
+function getGhRepo(){return localStorage.getItem(GR)||GH_DEF_REPO}
+function getGhAuto(){return localStorage.getItem(GA)==='1'}
+function getGhLast(){return localStorage.getItem(GL)||''}
+function ghApiUrl(){return 'https://api.github.com/repos/'+getGhRepo()+'/contents/relay.json'}
+function ghHeaders(extra){return Object.assign({'Accept':'application/vnd.github+json','Authorization':'Bearer '+getGhToken()},extra||{})}
+function b64(s){return btoa(unescape(encodeURIComponent(s)))}
+function fromB64(s){return decodeURIComponent(escape(atob(s)))}
+
+async function ghGet(){
+  var r=await fetch(ghApiUrl()+'?t='+Date.now(),{headers:ghHeaders(),signal:AbortSignal.timeout(15000)});
+  if(r.status===404)return{sha:null,data:[]};
+  if(!r.ok)throw new Error('拉取云端失败 '+r.status);
+  var j=await r.json();
+  var arr=JSON.parse(fromB64(j.content));
+  if(!Array.isArray(arr))arr=[];
+  return{sha:j.sha,data:arr};
+}
+async function ghPut(content,sha){
+  for(var attempt=0;attempt<4;attempt++){
+    var body={message:'sync relay '+new Date().toISOString(),content:b64(content)};
+    if(sha)body.sha=sha;
+    var r=await fetch(ghApiUrl(),{method:'PUT',headers:ghHeaders({'Content-Type':'application/json'}),body:JSON.stringify(body),signal:AbortSignal.timeout(15000)});
+    if(r.ok||r.status===201)return;
+    if(r.status===409){var cur=await ghGet();sha=cur.sha;continue;} // 远端被改，重新取 sha 重试
+    throw new Error('写入云端失败 '+r.status);
+  }
+  throw new Error('云端冲突重试失败');
+}
+
+// 合并：本地与云端按 id 对齐，同 id 保留 updatedAt 较新者（并集）
+function mergeData(local,cloud){
+  var map={};
+  (cloud||[]).forEach(function(e){if(e&&e.id)map[e.id]=e});
+  (local||[]).forEach(function(e){
+    if(!e||!e.id)return;
+    var c=map[e.id];
+    if(!c||(e.updatedAt||0)>=(c.updatedAt||0))map[e.id]=e;
+  });
+  return Object.keys(map).map(function(k){return map[k]});
+}
+
+var _syncing=false;
+async function syncCloud(){
+  if(_syncing)return;
+  var token=getGhToken();
+  if(!token){openSyncSettings();toast('请先配置 GitHub Token');return}
+  _syncing=true;
+  var btn=document.getElementById('syncBtn');
+  if(btn){btn.disabled=true;btn.classList.add('spin')}
+  setSyncBadge('ing');
+  try{
+    toast('正在同步云端...');
+    var remote=await ghGet();
+    var local=ld();
+    var merged=mergeData(local,remote.data);
+    await ghPut(JSON.stringify(merged,null,2),remote.sha);
+    sv(merged);
+    localStorage.setItem(GL,Date.now().toString());
+    renderCats();render();
+    setSyncBadge('on');
+    toast('同步完成 · 共 '+merged.length+' 条');
+  }catch(e){
+    setSyncBadge('err');
+    toast('同步失败：'+(e&&e.message?e.message:e));
+  }finally{
+    if(btn){btn.disabled=false;btn.classList.remove('spin')}
+    _syncing=false;
+  }
+}
+
+function setSyncBadge(state){
+  var b=document.getElementById('syncBadge');if(!b)return;
+  if(state==='on'){b.className='sync-badge on';b.textContent='🟢 已配置';var lt=getGhLast();if(lt)document.getElementById('syncLastTime').textContent=timeAgo(parseInt(lt,10))}
+  else if(state==='err'){b.className='sync-badge err';b.textContent='🔴 失败'}
+  else if(state==='ing'){b.className='sync-badge off';b.textContent='🔄 同步中'}
+  else{b.className='sync-badge off';b.textContent='🟡 未配置'}
+}
+function openSyncSettings(){
+  document.getElementById('ghToken').value=getGhToken();
+  document.getElementById('ghRepo').value=getGhRepo();
+  document.getElementById('ghAuto').checked=getGhAuto();
+  document.getElementById('syncOverlay').classList.add('on');
+  document.getElementById('syncModal').classList.add('on');
+}
+function closeSyncSettings(){
+  localStorage.setItem(GK,document.getElementById('ghToken').value.trim());
+  localStorage.setItem(GR,document.getElementById('ghRepo').value.trim()||GH_DEF_REPO);
+  localStorage.setItem(GA,document.getElementById('ghAuto').checked?'1':'0');
+  setSyncBadge(getGhToken()?'on':'off');
+  document.getElementById('syncOverlay').classList.remove('on');
+  document.getElementById('syncModal').classList.remove('on');
+}
+function initSyncBadge(){
+  setSyncBadge(getGhToken()?'on':'off');
+  if(getGhToken()&&getGhLast())document.getElementById('syncLastTime').textContent=timeAgo(parseInt(getGhLast(),10));
+  if(getGhAuto()&&getGhToken())syncCloud();
+}
+
 /* ── 启动 ── */
+initSyncBadge();
 renderCats();render();
 </script>
 </body>
