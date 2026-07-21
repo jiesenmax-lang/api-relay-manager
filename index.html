@@ -140,6 +140,11 @@ body.theme-light::before{content:'';position:fixed;inset:0;background:radial-gra
 .switch .slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
 .switch input:checked+.slider{background:var(--accent)}
 .switch input:checked+.slider:before{transform:translateX(18px)}
+/* ── 管理锁（密码 jiesen 解锁）── */
+.admin-only{display:none !important}
+body.admin .admin-only.d-flex{display:flex !important}
+body.admin .admin-only.d-ib{display:inline-block !important}
+body.admin .admin-only.d-block{display:block !important}
 
 </style>
 </head>
@@ -150,6 +155,7 @@ body.theme-light::before{content:'';position:fixed;inset:0;background:radial-gra
     <h1>API <span>中转站</span></h1>
     <div class="header-right">
       <div class="badge" id="totalCount">0 条</div>
+      <button class="icon-btn" id="lockBtn" onclick="openLock()" title="解锁管理">🔒</button>
       <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
         <svg class="ico-s" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
         <svg class="ico-m" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -158,21 +164,21 @@ body.theme-light::before{content:'';position:fixed;inset:0;background:radial-gra
   </div>
   <div class="search-row">
     <input class="search-input" type="search" id="searchInput" placeholder="搜索名称、链接、Key、备注...">
-    <button class="icon-btn" onclick="doImport()" title="导入">
+    <button class="icon-btn admin-only d-flex" onclick="doImport()" title="导入">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     </button>
-    <button class="icon-btn" onclick="doExport()" title="导出">
+    <button class="icon-btn admin-only d-flex" onclick="doExport()" title="导出">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
     </button>
-    <button class="testall-btn" id="testAllBtn" onclick="testAll()" title="一键测试全部中转站连通性">
+    <button class="testall-btn admin-only d-flex" id="testAllBtn" onclick="testAll()" title="一键测试全部中转站连通性">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 16.24a6 6 0 0 1 0-8.49M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>
       测全部
     </button>
-    <button class="sync-btn" id="syncBtn" onclick="syncCloud()" title="一键同步：把中转站同步到云端，多设备共享">
+    <button class="sync-btn admin-only d-flex" id="syncBtn" onclick="syncCloud()" title="一键同步：把中转站同步到云端，多设备共享">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       同步
     </button>
-    <button class="icon-btn" onclick="openSyncSettings()" title="云端同步设置">
+    <button class="icon-btn admin-only d-flex" onclick="openSyncSettings()" title="云端同步设置">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
     <input type="file" class="file-input" id="fileIn" accept=".json" onchange="handleImport(event)">
@@ -181,7 +187,7 @@ body.theme-light::before{content:'';position:fixed;inset:0;background:radial-gra
 
 <div class="cat-bar" id="catBar"></div>
 <div class="list-wrap"><div id="entryList"></div></div>
-<button class="fab" onclick="openModal()">+</button>
+<button class="fab admin-only d-flex" onclick="openModal()">+</button>
 
 <!-- 弹窗：添加/编辑 -->
 <div class="modal-overlay" id="overlay" onclick="closeModal()"></div>
@@ -231,6 +237,21 @@ body.theme-light::before{content:'';position:fixed;inset:0;background:radial-gra
     <button class="btn bp" onclick="syncCloud()">立即同步</button>
   </div>
   <div class="set-hint">同步逻辑：本地与云端按 <code>id</code> 合并，同一项保留更新时间较新的一方，所有设备最终一致。无需手动选方向。</div>
+</div>
+
+<!-- 弹窗：管理密码解锁 -->
+<div class="modal-overlay" id="lockOverlay" onclick="closeLock()"></div>
+<div class="modal" id="lockModal">
+  <h2>🔓 解锁管理</h2>
+  <div class="fg">
+    <label class="fl">管理密码</label>
+    <input class="fi" type="password" id="lockPw" placeholder="请输入密码" autocomplete="off" onkeydown="if(event.key==='Enter')doUnlock()">
+    <div class="set-hint" id="lockErr"></div>
+  </div>
+  <div class="ma">
+    <button class="btn bg" onclick="closeLock()">取消</button>
+    <button class="btn bp" onclick="doUnlock()">解锁</button>
+  </div>
 </div>
 
 <!-- 弹窗：手动复制 -->
@@ -432,8 +453,8 @@ function render(){
     h+='<div class="entry-card'+(p?' pinned':'')+'" style="animation-delay:'+(i*.04)+'s">';
     h+='<div class="entry-header"><div class="entry-name">'+(p?'<span class="pin-dot"></span>':'')+esc(nm)+'</div><div class="entry-actions">';
     h+='<button class="act'+(p?' pin-on':'')+'" data-act="pin" data-id="'+e.id+'" title="'+(p?'取消置顶':'置顶')+'">'+(p?ICON_STAR_ON:ICON_STAR_OFF)+'</button>';
-    h+='<button class="act" data-act="edit" data-id="'+e.id+'" title="编辑">'+ICON_EDIT+'</button>';
-    h+='<button class="act del" data-act="delete" data-id="'+e.id+'" title="删除">'+ICON_DEL+'</button>';
+    h+='<button class="act admin-only d-ib" data-act="edit" data-id="'+e.id+'" title="编辑">'+ICON_EDIT+'</button>';
+    h+='<button class="act del admin-only d-ib" data-act="delete" data-id="'+e.id+'" title="删除">'+ICON_DEL+'</button>';
     h+='</div></div>';
     // 链接
     h+='<div class="field-row"><div class="field-label">链接</div><div class="field-value"><a href="'+ea(e.link)+'" target="_blank" rel="noopener">'+esc(e.link)+'</a></div>';
@@ -450,7 +471,7 @@ function render(){
     h+='<div class="status-line"><span class="status-dot '+(lc?dotCls(lc.status):'idle')+'" id="dot-'+e.id+'"></span>';
     h+='<span class="status-msg" id="st-'+e.id+'">'+(lc?esc(lc.msg):'未测试 · 点右侧雷达检测')+'</span>';
     if(lc&&lc.ts)h+='<span class="status-time" id="stt-'+e.id+'">'+timeAgo(lc.ts)+'</span>';
-    h+='<button class="cbtn'+(lc&&lc.status==='testing'?' spin':'')+'" data-act="test" data-id="'+e.id+'" title="测试连通性"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 16.24a6 6 0 0 1 0-8.49M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg></button></div>';
+    h+='<button class="cbtn admin-only d-flex'+(lc&&lc.status==='testing'?' spin':'')+'" data-act="test" data-id="'+e.id+'" title="测试连通性"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 16.24a6 6 0 0 1 0-8.49M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg></button></div>';
     h+='</div>';
   });
   el.innerHTML=h;
@@ -631,6 +652,10 @@ async function testAll(){
 /* ── 云端同步（多设备）── */
 var GK='relay_gh_token',GR='relay_gh_repo',GA='relay_gh_auto',GL='relay_gh_last';
 var GH_DEF_REPO='jiesenmax-lang/api-relay-manager';
+// ⚠️ 不在源码中硬编码 Token：GitHub Secret Scanning 会拦截，且公开 Pages 暴露密钥不安全。
+// 改为：首次在你自己设备上填一次 Token（设置弹窗），之后存本机 localStorage，刷新/重开都还在。
+// 你此前点过同步，Token 已在本机 localStorage，故升级后直接可用，无需重填。
+var GH_DEF_TOKEN='';
 function getGhToken(){return localStorage.getItem(GK)||''}
 function getGhRepo(){return localStorage.getItem(GR)||GH_DEF_REPO}
 function getGhAuto(){return localStorage.getItem(GA)==='1'}
@@ -730,7 +755,40 @@ function initSyncBadge(){
   if(getGhAuto()&&getGhToken())syncCloud();
 }
 
+/* ── 管理锁（密码 jiesen 解锁）── */
+var ADM='relay_admin',ADM_PW='jiesen';
+function applyAdminClass(){document.body.classList.toggle('admin',localStorage.getItem(ADM)==='1')}
+function isAdmin(){return document.body.classList.contains('admin')}
+function updateLockBtn(){
+  var b=document.getElementById('lockBtn');if(!b)return;
+  if(isAdmin()){b.textContent='🔓';b.title='已解锁 · 点击锁定';b.onclick=doLock}
+  else{b.textContent='🔒';b.title='解锁管理（密码 jiesen）';b.onclick=openLock}
+}
+function openLock(){
+  document.getElementById('lockPw').value='';
+  document.getElementById('lockErr').textContent='';
+  document.getElementById('lockOverlay').classList.add('on');
+  document.getElementById('lockModal').classList.add('on');
+  setTimeout(function(){var i=document.getElementById('lockPw');if(i)i.focus()},200);
+}
+function closeLock(){document.getElementById('lockOverlay').classList.remove('on');document.getElementById('lockModal').classList.remove('on')}
+function doUnlock(){
+  var v=(document.getElementById('lockPw').value||'');
+  if(v===ADM_PW){localStorage.setItem(ADM,'1');applyAdminClass();closeLock();updateLockBtn();toast('已解锁管理')}
+  else{document.getElementById('lockErr').textContent='密码错误，请重试'}
+}
+function doLock(){
+  localStorage.removeItem(ADM);applyAdminClass();updateLockBtn();toast('已锁定');
+  // 锁定后若同步设置弹窗开着，直接关掉（不要调用 closeSyncSettings，会覆盖 Token）
+  document.getElementById('syncOverlay').classList.remove('on');
+  document.getElementById('syncModal').classList.remove('on');
+}
+
 /* ── 启动 ── */
+// 首次打开：若未手动改过 Token，则用预填默认 Token，开箱即用
+if(!localStorage.getItem(GK)&&GH_DEF_TOKEN)localStorage.setItem(GK,GH_DEF_TOKEN);
+applyAdminClass();
+updateLockBtn();
 initSyncBadge();
 renderCats();render();
 </script>
