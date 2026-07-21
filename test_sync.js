@@ -128,6 +128,34 @@ async function run() {
     ok('提示用户先配置 Token', toast && toast.textContent.indexOf('Token') >= 0);
   }
 
+  // ---------- T6: 管理锁（密码 jiesen） ----------
+  console.log('T6 管理锁（密码 jiesen）');
+  {
+    const dom = new JSDOM(HTML, { runScripts: 'dangerously', url: 'https://example.com/' });
+    const w = dom.window;
+    ok('默认锁定（body 无 admin 类）', !w.document.body.classList.contains('admin'));
+    ok('锁定按钮默认显示 🔒', (w.document.getElementById('lockBtn').textContent || '').indexOf('🔒') >= 0);
+    w.document.getElementById('lockPw').value = 'wrong';
+    w.doUnlock();
+    ok('错误密码不解锁', !w.document.body.classList.contains('admin'));
+    w.document.getElementById('lockPw').value = 'jiesen';
+    w.doUnlock();
+    ok('正确密码 jiesen 解锁', w.document.body.classList.contains('admin'));
+    ok('解锁后锁定按钮变为 🔓', (w.document.getElementById('lockBtn').textContent || '').indexOf('🔓') >= 0);
+    w.doLock();
+    ok('doLock 重新锁定', !w.document.body.classList.contains('admin'));
+  }
+
+  // ---------- T7: 源码不含硬编码 Token（安全） ----------
+  console.log('T7 源码不含硬编码 Token（安全，避免 Secret Scanning 拦截）');
+  {
+    const dom = new JSDOM(HTML, { runScripts: 'dangerously', url: 'https://example.com/' });
+    const w = dom.window;
+    const tok = w.localStorage.getItem('relay_gh_token');
+    ok('全新实例不预填 Token（需用户在本机填一次）', !tok || tok === '');
+    ok('源码中未硬编码 Token（GH_DEF_TOKEN 为空字符串）', w.GH_DEF_TOKEN === '');
+  }
+
   console.log('\n结果：' + pass + ' 通过 / ' + fail + ' 失败');
   process.exit(fail ? 1 : 0);
 }
